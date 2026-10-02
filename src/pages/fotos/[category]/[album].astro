@@ -1,0 +1,12 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PhotoGallery from '../../../components/PhotoGallery.astro';
+import PhotoCard from '../../../components/PhotoCard.astro';
+import { getGalleryCategories } from '../../../data/gallery';
+import { sitePath } from '../../../data/site';
+export function getStaticPaths() { return getGalleryCategories().flatMap((category) => category.albums.map((album) => ({ params: { category: category.slug, album: album.slug }, props: { category, album } }))); }
+const { category, album } = Astro.props;
+---
+<Layout title={`${album.title} · ${category.title} | Effer Glass`} description={`Galería de ${album.title}, fotografía de Effer Glass en Cienfuegos.`}>
+		<main><section class="shell page-heading"><nav class="breadcrumb" aria-label="Ruta de navegación"><a href={sitePath()}>Inicio</a><span aria-hidden="true">/</span><a href={sitePath('fotos/')}>Galería</a><span aria-hidden="true">/</span><a href={sitePath(`fotos/${category.slug}/`)}>{category.title}</a></nav><span class="eyebrow">{category.title} · {album.photos.length} fotografías</span><h1>{album.title}.</h1><p>{album.subalbums?.length ? 'Explora las subgalerías de este evento.' : 'Una historia en imágenes, capturada por Effer Glass.'}</p><div class="button-row" style="justify-content:center"><a class="button button-quiet" href={sitePath(`fotos/${category.slug}/`)}>Volver a {category.title}</a><a class="button" href="https://wa.me/5355192915?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar cita <span aria-hidden="true">↗</span></a></div></section><section class="shell gallery-section">{album.subalbums?.length ? <div class="album-grid">{album.subalbums.map((subalbum) => <PhotoCard album={{ ...subalbum, category: category.slug }} categoryTitle={album.title} href={sitePath(`fotos/${category.slug}/${album.slug}/${subalbum.slug}/`)} />)}</div> : <PhotoGallery photos={album.photos} album={album.title} />}</section></main>
+</Layout>

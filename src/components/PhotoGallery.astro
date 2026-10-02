@@ -1,0 +1,155 @@
+---
+import CarouselGallery from 'astro-gallery/components/CarouselGallery.astro';
+import type { GalleryPhoto } from '../data/gallery';
+interface Props { photos: GalleryPhoto[]; album?: string; }
+const { photos, album = 'Galería de Effer Glass' } = Astro.props;
+const carouselPhotos = photos.map(({ src, alt }) => ({ src, alt, title: alt }));
+---
+
+<div class="photo-grid" data-photo-grid>
+	{photos.map((photo, index) => (
+		<button class="photo-tile" type="button" data-photo-index={index} aria-label={`Ampliar foto ${index + 1}: ${photo.alt}`}>
+			<img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" />
+		</button>
+	))}
+</div>
+
+<dialog class="photo-carousel-dialog" data-photo-carousel aria-label={album}>
+	<button class="photo-carousel-close" type="button" data-carousel-close aria-label="Cerrar galería">×</button>
+	<CarouselGallery
+		images={carouselPhotos}
+		album={album}
+		cardAspectRatio="4 / 5"
+		loop
+		dots
+		labels={{ previous: 'Foto anterior', next: 'Foto siguiente', goToSlide: 'Ir a la foto {n}' }}
+	/>
+	<div class="photo-carousel-actions" aria-label="Acciones de la fotografía">
+		<a class="photo-carousel-action" data-photo-download href="#" download aria-label="Descargar foto">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v3h14v-3"/></svg>
+			<span>Descargar</span>
+		</a>
+		<button class="photo-carousel-action" data-photo-like type="button" aria-label="Me gusta" aria-pressed="false">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+			<span>Me gusta</span><span class="photo-like-count" data-photo-like-count aria-live="polite">0</span>
+		</button>
+	</div>
+</dialog>
+
+<script>
+	const photoGrid = document.querySelector<HTMLElement>('[data-photo-grid]');
+	const carouselDialog = document.querySelector<HTMLDialogElement>('[data-photo-carousel]');
+	const closeCarousel = carouselDialog?.querySelector<HTMLButtonElement>('[data-carousel-close]');
+	const carouselRoot = carouselDialog?.querySelector<HTMLElement>('.asg-carousel');
+	const carouselCards = Array.from(carouselRoot?.querySelectorAll<HTMLElement>('.asg-carousel__card') ?? []);
+	const carouselStatus = carouselDialog?.querySelector<HTMLElement>('.asg-carousel__status');
+	const carouselNext = carouselDialog?.querySelector<HTMLButtonElement>('.asg-carousel__nav--next');
+	const downloadLink = carouselDialog?.querySelector<HTMLAnchorElement>('[data-photo-download]');
+	const likeButton = carouselDialog?.querySelector<HTMLButtonElement>('[data-photo-like]');
+	const likeCount = carouselDialog?.querySelector<HTMLElement>('[data-photo-like-count]');
+	const photoTiles = Array.from(photoGrid?.querySelectorAll<HTMLButtonElement>('[data-photo-index]') ?? []);
+	let lastFocusedPhoto: HTMLButtonElement | undefined;
+	const inMemoryLikes = new Map<string, boolean>();
+
+	function isLiked(photoKey: string) {
+		if (inMemoryLikes.has(photoKey)) return inMemoryLikes.get(photoKey) ?? false;
+		try {
+			return localStorage.getItem(`effer-gallery-like:${photoKey}`) === 'true';
+		} catch {
+			return false;
+		}
+	}
+
+	function saveLike(photoKey: string, liked: boolean) {
+		inMemoryLikes.set(photoKey, liked);
+		try {
+			if (liked) localStorage.setItem(`effer-gallery-like:${photoKey}`, 'true');
+			else localStorage.removeItem(`effer-gallery-like:${photoKey}`);
+		} catch {
+			return;
+		}
+	}
+
+	function updatePhotoActions() {
+		const currentImage = carouselRoot?.querySelector<HTMLImageElement>('.asg-carousel__card.is-current img');
+		if (!currentImage || !downloadLink || !likeButton || !likeCount) return;
+
+		const imageUrl = currentImage.currentSrc || currentImage.src;
+		const imagePath = new URL(imageUrl, window.location.href).pathname;
+		const photoKey = decodeURIComponent(imagePath);
+		const filename = decodeURIComponent(imagePath.split('/').pop() || 'foto');
+		const liked = isLiked(photoKey);
+
+		downloadLink.href = imageUrl;
+		downloadLink.download = filename;
+		downloadLink.setAttribute('aria-label', `Descargar ${currentImage.alt || 'foto'}`);
+		likeButton.dataset.photoKey = photoKey;
+		likeButton.setAttribute('aria-pressed', String(liked));
+		likeButton.setAttribute('aria-label', `${liked ? 'Quitar me gusta de' : 'Me gusta'} ${currentImage.alt || 'esta foto'}`);
+		likeCount.textContent = liked ? '1' : '0';
+	}
+
+	function updateCarouselDistances() {
+		carouselCards.forEach((card) => {
+			const scale = Number(card.style.getPropertyValue('--asg-car-scale'));
+			if (scale > 0) card.dataset.distance = String(Math.round((1 - scale) / 0.16));
+		});
+	}
+
+	if (carouselRoot) {
+		const carouselObserver = new MutationObserver(updateCarouselDistances);
+		carouselObserver.observe(carouselRoot, { attributes: true, subtree: true, attributeFilter: ['style'] });
+		updateCarouselDistances();
+	}
+
+	function openCarousel(startIndex: number, tile: HTMLButtonElement) {
+		if (!carouselDialog?.showModal) return;
+		lastFocusedPhoto = tile;
+		carouselDialog.classList.add('is-positioning');
+		carouselDialog.showModal();
+
+		let attempts = 0;
+		const positionCarousel = () => {
+			const match = carouselStatus?.textContent?.match(/^(\d+)\s+of\s+(\d+)/);
+			if (!match && attempts++ < 60) {
+				requestAnimationFrame(positionCarousel);
+				return;
+			}
+
+			if (match && carouselNext) {
+				const currentIndex = Number(match[1]) - 1;
+				const total = Number(match[2]);
+				const steps = (startIndex - currentIndex + total) % total;
+				for (let step = 0; step < steps; step++) carouselNext.click();
+			}
+			updatePhotoActions();
+
+			requestAnimationFrame(() => {
+				carouselDialog.classList.remove('is-positioning');
+				carouselRoot?.focus({ preventScroll: true });
+			});
+		};
+
+		requestAnimationFrame(positionCarousel);
+	}
+
+	photoTiles.forEach((tile) => tile.addEventListener('click', () => {
+		openCarousel(Number(tile.dataset.photoIndex), tile);
+	}));
+	likeButton?.addEventListener('click', () => {
+		const photoKey = likeButton.dataset.photoKey;
+		if (!photoKey) return;
+		saveLike(photoKey, !isLiked(photoKey));
+		updatePhotoActions();
+	});
+	if (carouselRoot) {
+		const actionsObserver = new MutationObserver(updatePhotoActions);
+		actionsObserver.observe(carouselRoot, { attributes: true, subtree: true, attributeFilter: ['class'] });
+		updatePhotoActions();
+	}
+	closeCarousel?.addEventListener('click', () => carouselDialog?.close());
+	carouselDialog?.addEventListener('click', (event) => {
+		if (event.target === carouselDialog) carouselDialog.close();
+	});
+	carouselDialog?.addEventListener('close', () => lastFocusedPhoto?.focus());
+</script>

@@ -1,0 +1,50 @@
+---
+import type { GalleryAlbum } from '../data/gallery';
+import { sitePath } from '../data/site';
+interface Props { album: GalleryAlbum; categoryTitle: string; href?: string; }
+const { album, categoryTitle, href = sitePath(`fotos/${album.category}/${album.slug}/`) } = Astro.props;
+const cover = album.photos[0];
+---
+<a class="photo-card" href={href} aria-label={`Ver ${album.title}, ${album.photos.length} fotos`}><span class="photo-card-media" data-slideshow data-photos={JSON.stringify(album.photos)}><img class="is-visible" src={cover.src} alt={cover.alt} loading="lazy" decoding="async" />{album.photos.length > 1 && <img src={cover.src} alt="" aria-hidden="true" loading="lazy" decoding="async" />}</span><span class="photo-card-copy"><small>{categoryTitle} · {album.photos.length} fotos</small><h3>{album.title}</h3></span></a>
+
+<script>
+	const slideshows = Array.from(document.querySelectorAll<HTMLElement>('[data-slideshow]'));
+	const slideInterval = 3500;
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (!reduceMotion) {
+		slideshows.forEach((slideshow) => {
+			const photos = JSON.parse(slideshow.dataset.photos ?? '[]') as { src: string; alt: string }[];
+			const images = Array.from(slideshow.querySelectorAll<HTMLImageElement>('img'));
+			if (photos.length < 2 || images.length < 2) return;
+
+			let activeLayer = 0;
+			let activePhoto = 0;
+			const advance = () => {
+				if (document.hidden) {
+					window.setTimeout(advance, slideInterval);
+					return;
+				}
+
+				const nextPhoto = (activePhoto + 1) % photos.length;
+				const nextImage = images[1 - activeLayer];
+				const preload = new Image();
+				preload.onload = () => {
+					nextImage.src = preload.src;
+					nextImage.alt = photos[nextPhoto].alt;
+					nextImage.removeAttribute('aria-hidden');
+					images[activeLayer].classList.remove('is-visible');
+					images[activeLayer].setAttribute('aria-hidden', 'true');
+					nextImage.classList.add('is-visible');
+					activeLayer = 1 - activeLayer;
+					activePhoto = nextPhoto;
+					window.setTimeout(advance, slideInterval);
+				};
+				preload.onerror = () => window.setTimeout(advance, slideInterval);
+				preload.src = photos[nextPhoto].src;
+			};
+
+			window.setTimeout(advance, slideInterval);
+		});
+	}
+</script>

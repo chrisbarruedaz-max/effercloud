@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PhotoCard from '../../components/PhotoCard.astro';
+import { getGalleryCategories } from '../../data/gallery';
+import { sitePath } from '../../data/site';
+const categories = getGalleryCategories();
+const populatedCategories = categories.filter((category) => category.albums.length > 0);
+---
+<Layout title="Galería de fotos | Effer Glass" description="Fotografías de eventos, retratos y negocios de Effer Glass en Cienfuegos.">
+	<main><section class="shell page-heading"><span class="eyebrow">Trabajo reciente · Cienfuegos</span><h1>Galería de fotos.</h1><p>Eventos, retratos y negocios capturados por Effer Glass. Entre a un álbum para explorar sus fotografías.</p><a class="button" href="https://wa.me/5355192915?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar cita <span aria-hidden="true">↗</span></a></section><section class="shell gallery-section">{populatedCategories.length > 0 ? <div class="gallery-categories">{populatedCategories.map((category) => <section class="gallery-category" aria-labelledby={`category-${category.slug}`}><header class="gallery-category-heading"><h2 id={`category-${category.slug}`}>{category.title}</h2><a href={sitePath(`fotos/${category.slug}/`)}>Ver categoría <span aria-hidden="true">↗</span></a></header><div class="album-grid">{category.albums.map((album) => <PhotoCard album={album} categoryTitle={category.title} />)}</div></section>)}</div> : <p class="empty-gallery">Todavía no hay fotos en la galería. Los nuevos álbumes aparecerán aquí.</p>}</section></main>
+</Layout>

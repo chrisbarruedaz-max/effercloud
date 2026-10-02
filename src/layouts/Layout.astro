@@ -1,23 +1,57 @@
+---
+import '../styles/global.css';
+import { sitePath } from '../data/site';
+
+const {
+	title = 'Effer Glass | Foto, video y edición en Cienfuegos',
+	description = 'Fotografía, videografía, edición y manejo de redes en Cienfuegos.',
+} = Astro.props;
+---
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#0b0f19" />
+		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href={sitePath('favicon.svg')} />
+		<link rel="icon" href={sitePath('favicon.ico')} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title}</title>
 	</head>
 	<body>
+		<div class="announcement">Nuevo: manejo de redes con servicio de 24 horas.</div>
+		<header class="site-header">
+			<div class="shell header-inner">
+				<a class="brand" href={sitePath()} aria-label="Effer Glass, inicio"><img class="brand-mark" src={sitePath('assets/effer-logo.png')} alt="" width="38" height="38" /><span>Effer Glass</span></a>
+				<nav class="main-nav" aria-label="Principal">
+					<a href={sitePath('#servicios')}>Servicios</a>
+					<a href={sitePath('fotos/')}>Galería</a>
+					<a href={sitePath('#proceso')}>Cómo trabajamos</a>
+				</nav>
+				<a class="button button-small header-cta" href="https://wa.me/5355192915?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar cita <span aria-hidden="true">↗</span></a>
+				<details class="mobile-nav">
+					<summary aria-label="Abrir menú">Menú</summary>
+					<nav aria-label="Menú móvil">
+						<a href={sitePath('#servicios')}>Servicios</a>
+						<a href={sitePath('fotos/')}>Galería</a>
+						<a href={sitePath('#proceso')}>Cómo trabajamos</a>
+						<a href="https://wa.me/5355192915?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar cita ↗</a>
+					</nav>
+				</details>
+			</div>
+		</header>
 		<slot />
+		<footer class="site-footer">
+			<div class="shell footer-main">
+				<div><a class="brand footer-brand" href={sitePath()} aria-label="Effer Glass, inicio"><img class="brand-mark" src={sitePath('assets/effer-logo.png')} alt="" width="38" height="38" /><span>Effer Glass</span></a><p>Fotografía, video y edición en Cienfuegos.</p></div>
+				<div><h2>Explorar</h2><a href={sitePath('#servicios')}>Servicios</a><a href={sitePath('fotos/')}>Galería de fotos</a><a href={sitePath('#faq')}>Preguntas frecuentes</a></div>
+				<div><h2>Contacto</h2><a href="https://wa.me/5355192915" target="_blank" rel="noopener noreferrer">WhatsApp · +53 55 192 915</a><span>Cienfuegos, Cuba</span></div>
+			</div>
+			<div class="shell footer-bottom"><span>© {new Date().getFullYear()} Effer Glass</span><a href={sitePath('fotos/')}>Ver galería <span aria-hidden="true">↗</span></a></div>
+		</footer>
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>

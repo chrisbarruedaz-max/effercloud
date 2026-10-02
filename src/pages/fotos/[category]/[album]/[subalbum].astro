@@ -1,0 +1,30 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import PhotoGallery from '../../../../components/PhotoGallery.astro';
+import { getGalleryCategories } from '../../../../data/gallery';
+import { sitePath } from '../../../../data/site';
+
+export function getStaticPaths() {
+	return getGalleryCategories().flatMap((category) => category.albums.flatMap((album) =>
+		(album.subalbums ?? []).map((subalbum) => ({
+			params: { category: category.slug, album: album.slug, subalbum: subalbum.slug },
+			props: { category, album, subalbum },
+		})),
+	));
+}
+
+const { category, album, subalbum } = Astro.props;
+---
+
+<Layout title={`${subalbum.title} · ${album.title} | Effer Glass`} description={`Fotos de ${subalbum.title} en ${album.title}, por Effer Glass en Cienfuegos.`}>
+	<main>
+		<section class="shell page-heading">
+			<nav class="breadcrumb" aria-label="Ruta de navegación"><a href={sitePath()}>Inicio</a><span aria-hidden="true">/</span><a href={sitePath('fotos/')}>Galería</a><span aria-hidden="true">/</span><a href={sitePath(`fotos/${category.slug}/`)}>{category.title}</a><span aria-hidden="true">/</span><a href={sitePath(`fotos/${category.slug}/${album.slug}/`)}>{album.title}</a></nav>
+			<span class="eyebrow">{album.title} · {subalbum.photos.length} fotografías</span>
+			<h1>{subalbum.title}.</h1>
+			<p>Una historia en imágenes, capturada por Effer Glass.</p>
+			<div class="button-row" style="justify-content:center"><a class="button button-quiet" href={sitePath(`fotos/${category.slug}/${album.slug}/`)}>Volver a {album.title}</a><a class="button" href="https://wa.me/5355192915?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar cita <span aria-hidden="true">↗</span></a></div>
+		</section>
+		<section class="shell gallery-section"><PhotoGallery photos={subalbum.photos} album={`${album.title} · ${subalbum.title}`} /></section>
+	</main>
+</Layout>

@@ -1,0 +1,11 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PhotoCard from '../../../components/PhotoCard.astro';
+import { getGalleryCategories } from '../../../data/gallery';
+import { sitePath } from '../../../data/site';
+export function getStaticPaths() { return getGalleryCategories().map((category) => ({ params: { category: category.slug }, props: { category } })); }
+const { category } = Astro.props;
+---
+<Layout title={`${category.title} | Galería de Effer Glass`} description={`Fotografías de ${category.title.toLocaleLowerCase('es')} realizadas por Effer Glass en Cienfuegos.`}>
+	<main><section class="shell page-heading"><nav class="breadcrumb" aria-label="Ruta de navegación"><a href={sitePath()}>Inicio</a><span aria-hidden="true">/</span><a href={sitePath('fotos/')}>Galería</a><span aria-hidden="true">/</span><span>{category.title}</span></nav><span class="eyebrow">Galería de fotos</span><h1>{category.title}.</h1><p>Una selección de trabajos de Effer Glass.</p></section><section class="shell gallery-section">{category.albums.length > 0 ? <div class="album-grid">{category.albums.map((album) => <PhotoCard album={album} categoryTitle={category.title} />)}</div> : <p class="empty-gallery">Todavía no hay álbumes en esta categoría.</p>}</section></main>
+</Layout>

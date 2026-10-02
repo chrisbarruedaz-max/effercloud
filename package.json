@@ -12,7 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "astro-gallery": "^1.2.1"
   },
   "allowScripts": {
     "esbuild": true
